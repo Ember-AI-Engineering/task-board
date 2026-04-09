@@ -1,7 +1,7 @@
 {
   "name": "@codewusama/task-board",
-  "version": "0.1.0",
-  "description": "Reusable Kanban task board component for Ember AI applications",
+  "version": "0.2.0",
+  "description": "Reusable Kanban task board component",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
