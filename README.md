@@ -120,6 +120,10 @@ npm run build  # Production build
 npm test       # Run tests
 ```
 
+## Backend
+
+The `backend-reference/` folder contains a Python FastAPI reference implementation for the task board API. Copy it into your app's backend and adapt the auth and database setup to match your app. See [`backend-reference/README.md`](backend-reference/README.md) for details.
+
 ## License
 
-Private — Ember AI internal use only.
+Private — internal use only.
