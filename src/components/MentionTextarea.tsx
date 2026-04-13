@@ -127,6 +127,7 @@ export function MentionTextarea({
       />
       {mentionQuery !== null && mentionUsers.length > 0 && (
         <div className="absolute bottom-full left-0 mb-1 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 py-1 max-h-48 overflow-y-auto">
+          <div className="px-2.5 py-1.5 text-[10px] font-medium text-neutral-400 uppercase tracking-wide">People</div>
           {mentionUsers.map((user, i) => (
             <button
               key={user.username}
@@ -139,7 +140,7 @@ export function MentionTextarea({
                 <span className="text-[9px] font-medium text-white">{getInitials(user.name)}</span>
               </div>
               <div className="min-w-0">
-                <div className="font-medium text-neutral-800 truncate">{user.name}</div>
+                <div className="text-xs font-medium text-neutral-800 truncate">{user.name}</div>
                 <div className="text-[10px] text-neutral-400 truncate">{user.email}</div>
               </div>
             </button>
