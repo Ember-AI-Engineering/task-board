@@ -216,7 +216,7 @@ export function TaskBoard({
           {board.boardLoading ? (
             <BoardSkeleton />
           ) : (
-            <div className="flex-1 min-h-0 eb-tb-board-scroll overflow-x-auto overflow-y-hidden pb-4">
+            <div className="flex-1 min-h-0 eb-tb-board-scroll overflow-y-hidden pb-4">
               <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex gap-4 min-w-max h-full">
                   {columns.map((col) => {

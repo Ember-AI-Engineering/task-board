@@ -58,6 +58,8 @@ Copy the backend reference files into the equivalent locations in this app's bac
 
 **CRITICAL — ID format:** Regardless of database, all IDs returned to the frontend MUST be **strings**. If using integer primary keys, convert them: `"id": str(row.id)`. The frontend passes IDs as strings in all API calls.
 
+**PostgreSQL timezone warning:** The reference backend uses `datetime.now(timezone.utc)` (timezone-aware). PostgreSQL with `TIMESTAMP WITHOUT TIME ZONE` columns (the SQLAlchemy/SQLModel default) will throw `"can't subtract offset-naive and offset-aware datetimes"` from asyncpg. Use `datetime.utcnow()` (naive) instead, or change your column type to `TIMESTAMP WITH TIME ZONE`.
+
 The key contract the frontend expects:
 - `GET /tasks` returns `{ [status]: { tasks: [...], total: N, unread: N } }`
 - `GET /tasks/{id}` returns the task with `comments` and `activity` arrays
@@ -147,7 +149,47 @@ Create a new page at `/task-board`. The page should:
 - Render `<TaskBoard>` inside the provider
 - Set up feature flags (drag-and-drop, comments, filters enabled; attachments disabled for now)
 - Pass an `onError` callback for error visibility
-- Add comfortable padding on all sides of the page container so the board doesn't sit flush against the edges. Match the padding used on other pages in the app. If no reference exists, use at least `p-6` or equivalent.
+
+**CRITICAL — Layout constraint:** `<TaskBoard>` uses `h-full` and `flex-1` internally, which means its parent container MUST have a **fixed/constrained height**. If the parent can grow unbounded, the 8 kanban columns (2300px+ wide) will push the container wider instead of scrolling horizontally. Use absolute positioning to constrain:
+
+```tsx
+<div className="relative" style={{ height: 'calc(100vh - <headerHeight>px)' }}>
+  <div className="absolute inset-0 p-6 lg:p-10">
+    <TaskBoardProvider ...>
+      <TaskBoard />
+    </TaskBoardProvider>
+  </div>
+</div>
+```
+
+Replace `<headerHeight>` with the app's actual header/navbar height. Do NOT rely on `flex-1` or `h-full` alone without a height-constrained ancestor.
+
+**Scrollbar conflicts:** If the app uses a global `no-scrollbar` CSS class or utility that hides scrollbars, add this override in the app's global CSS to restore the board's horizontal scrollbar:
+
+```css
+.eb-tb-board-scroll {
+  overflow-x: scroll !important;
+  scrollbar-width: thin !important;
+}
+.eb-tb-board-scroll::-webkit-scrollbar {
+  display: block !important;
+  height: 10px !important;
+}
+```
+
+**User object:** The `user` prop on `<TaskBoardProvider>` MUST include ALL of these fields. Missing fields will cause runtime errors in the TaskDetailPanel:
+
+```typescript
+{
+  username: string;    // Required — used for comment ownership checks
+  name: string;        // Required — display name
+  email: string;       // Required — shown in mentions
+  apps: string[];      // Required — project access list, or ["all"]
+  role?: string;       // Optional — "user", "org_admin", etc.
+  is_reviewer?: boolean; // Optional — defaults to false
+  is_internal?: boolean; // Optional but important — controls internal comments visibility
+}
+```
 
 The package ships with built-in CreateTaskModal and TaskDetailPanel, so no render props are needed for a complete, polished UI. Just render `<TaskBoard />` inside the provider and it works out of the box.
 

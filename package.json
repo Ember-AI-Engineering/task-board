@@ -1,6 +1,6 @@
 {
   "name": "@emberai-engg/task-board",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Reusable Kanban task board component",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
