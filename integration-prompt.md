@@ -141,26 +141,7 @@ Import `@emberai-engg/task-board/styles.css` in the app's global CSS or root lay
 
 Without this step, the board will render but all styling will be broken.
 
-**Font:** The package is designed for **Inter** (Google Fonts). It doesn't bundle a font — it inherits from the app's CSS. For pixel-perfect rendering, make sure the app loads Inter as its base font. For Next.js:
-
-```tsx
-// layout.tsx
-import { Inter } from 'next/font/google';
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-
-// On <body>:
-<body className={`${inter.variable} antialiased`}>
-```
-
-And in global CSS:
-```css
-body {
-  font-family: var(--font-inter), "Inter", sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-```
-
-For non-Next.js apps, add `<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">` to the HTML head and set `font-family: "Inter", sans-serif` on body. If the app already uses a different font, the board will still work but text will render in that font instead.
+**Font:** The package does NOT bundle a font — it inherits from the app's CSS. The board will render in whatever font family the consuming app already uses, which is the preferred behavior. Just make sure the app has a base `font-family` set on `body` and uses `-webkit-font-smoothing: antialiased` for clean rendering.
 
 ### 3c: Create the task board page
 
