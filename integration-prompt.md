@@ -41,13 +41,32 @@ Copy the backend reference files into the equivalent locations in this app's bac
 - Auth/tenant dependency to match this app's existing auth approach
 - Database connection to match this app's existing DB setup
 
+**Database adaptation:** The reference implementation uses **MongoDB** (via Motor async driver). If this app uses a different database, you MUST rewrite the data access layer to match. The API request/response contracts must stay the same — only the storage layer changes. Here's how to adapt for common databases:
+
+- **PostgreSQL / MySQL (SQLAlchemy):** Replace MongoDB collection calls with SQLAlchemy ORM models and queries. Create tables for `taskboard_tasks`, `taskboard_comments`, `taskboard_activity`, `taskboard_user_reads`, `taskboard_notifications`, and `taskboard_projects`. Use auto-incrementing IDs or UUIDs instead of ObjectId. Replace `insert_one` → `session.add()`, `find` → `session.query()`, `update_one` → `session.execute(update(...))`, `delete_one` → `session.delete()`.
+- **PostgreSQL (asyncpg / raw SQL):** Write async queries directly. The collection names map to table names. Create appropriate indexes matching those listed in `backend-reference/README.md`.
+- **DynamoDB:** Use partition keys (e.g., `project_slug#status` for tasks) and sort keys (`position`). Notifications need a GSI on `recipient + read + created_at`.
+- **Firestore:** Map collections 1:1. Use subcollections for comments under tasks if preferred. Replace ObjectId with Firestore auto-IDs.
+- **Prisma ORM:** Define models in `schema.prisma` matching the 6 collections, then use the Prisma client in the route handlers.
+
+The key contract the frontend expects:
+- `GET /tasks` returns `{ [status]: { tasks: [...], total: N, unread: N } }`
+- `GET /tasks/{id}` returns the task with `comments` and `activity` arrays
+- All IDs are strings
+- All dates are ISO 8601 strings
+- The `_serialize_doc` pattern (converting DB-native IDs to string `id` fields) must be replicated in whatever ORM/driver you use
+
 ### 3c: Register the task board router
 
 Register the task board router in the main app file at the `/api/taskboard` prefix.
 
 ### 3d: Set up the database
 
-The task board needs tables/collections for: projects, columns, tasks, comments, notifications, and task read tracking. Run the seed script or manually create the initial project. Name the project based on what this app does.
+The task board needs 6 tables/collections: `taskboard_tasks`, `taskboard_comments`, `taskboard_activity`, `taskboard_user_reads`, `taskboard_notifications`, and `taskboard_projects`. See `backend-reference/README.md` for the full schema and recommended indexes.
+
+If using a relational database (PostgreSQL, MySQL), create a migration with the appropriate tables and columns. If using a document database (MongoDB, Firestore), the collections are created automatically on first write.
+
+Run the seed script or manually create the initial project. Name the project based on what this app does.
 
 ### 3e: Verify the backend
 
