@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 import type { Task } from '../types';
 import { useTaskBoardContext } from '../context/TaskBoardProvider';
@@ -39,8 +39,9 @@ export function TaskBoard({
 }: TaskBoardProps) {
   const { columns, features, service } = useTaskBoardContext();
 
-  const board = useTaskBoard();
-  const actions = useTaskActions(board.tasks, board.setTasks, board.fetchTasks);
+  const isDraggingRef = useRef(false);
+  const board = useTaskBoard(isDraggingRef);
+  const actions = useTaskActions(board.tasks, board.setTasks, board.fetchTasks, isDraggingRef);
   const { copiedTaskId, copyShareLink } = useShareLink();
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

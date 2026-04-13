@@ -3,7 +3,7 @@ import type { Task, TasksByStatus, ColumnTotals, ColumnUnreads, Project } from '
 import { useTaskBoardContext } from '../context/TaskBoardProvider';
 import { DEFAULT_PAGE_SIZE } from '../utils/constants';
 
-export function useTaskBoard() {
+export function useTaskBoard(isDragging?: React.RefObject<boolean>) {
   const { service, user, projects: configProjects, columns, config } = useTaskBoardContext();
 
   const [fetchedProjects, setFetchedProjects] = useState<Project[]>([]);
@@ -78,7 +78,10 @@ export function useTaskBoard() {
     }
   }, [selectedProject, service, columns]);
 
-  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+  useEffect(() => {
+    if (isDragging?.current) return;
+    fetchTasks();
+  }, [fetchTasks, isDragging]);
 
   const loadMoreTasks = useCallback(async (statusKey: string) => {
     if (!selectedProject || loadingMore[statusKey]) return;

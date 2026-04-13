@@ -7,11 +7,12 @@ export function useTaskActions(
   tasks: TasksByStatus,
   setTasks: React.Dispatch<React.SetStateAction<TasksByStatus>>,
   fetchTasks: () => Promise<void>,
+  isDragging?: React.RefObject<boolean>,
 ) {
   const { service, config } = useTaskBoardContext();
 
-  const tasksRef = useRef(tasks);
-  tasksRef.current = tasks;
+  const internalDragging = useRef(false);
+  const draggingRef = isDragging ?? internalDragging;
 
   const createTask = useCallback(async (data: CreateTaskPayload): Promise<Task> => {
     const task = await service.createTask(data);
@@ -44,44 +45,50 @@ export function useTaskActions(
     sourceIndex: number,
     destIndex: number,
   ) => {
-    const currentTasks = tasksRef.current;
-    const sourceCol = [...(currentTasks[sourceStatus] || [])];
-    const destCol = sourceStatus === destStatus ? sourceCol : [...(currentTasks[destStatus] || [])];
+    draggingRef.current = true;
 
-    const [movedTask] = sourceCol.splice(sourceIndex, 1);
-    if (!movedTask) return;
+    // Calculate position and apply optimistic update via functional updater
+    let newPosition = POSITION_GAP;
 
-    const updatedTask = { ...movedTask, status: destStatus };
-    destCol.splice(destIndex, 0, updatedTask);
+    setTasks((prev) => {
+      const sourceCol = [...(prev[sourceStatus] || [])];
+      const destCol = sourceStatus === destStatus ? sourceCol : [...(prev[destStatus] || [])];
 
-    // Calculate position
-    let newPosition: number;
-    if (destCol.length === 1) {
-      newPosition = POSITION_GAP;
-    } else if (destIndex === 0) {
-      newPosition = (destCol[1]?.position ?? POSITION_GAP) - POSITION_GAP;
-    } else if (destIndex === destCol.length - 1) {
-      newPosition = (destCol[destCol.length - 2]?.position ?? 0) + POSITION_GAP;
-    } else {
-      const above = destCol[destIndex - 1]?.position ?? 0;
-      const below = destCol[destIndex + 1]?.position ?? above + POSITION_GAP * 2;
-      newPosition = (above + below) / 2;
-    }
-    updatedTask.position = newPosition;
+      const [movedTask] = sourceCol.splice(sourceIndex, 1);
+      if (!movedTask) return prev;
 
-    // Optimistic update
-    const newTasks = { ...currentTasks };
-    newTasks[sourceStatus] = sourceCol;
-    if (sourceStatus !== destStatus) {
-      newTasks[destStatus] = destCol;
-    }
-    setTasks(newTasks);
+      const updatedTask = { ...movedTask, status: destStatus };
+      destCol.splice(destIndex, 0, updatedTask);
 
-    // Persist
+      // Calculate position
+      if (destCol.length === 1) {
+        newPosition = POSITION_GAP;
+      } else if (destIndex === 0) {
+        newPosition = (destCol[1]?.position ?? POSITION_GAP) - POSITION_GAP;
+      } else if (destIndex === destCol.length - 1) {
+        newPosition = (destCol[destCol.length - 2]?.position ?? 0) + POSITION_GAP;
+      } else {
+        const above = destCol[destIndex - 1]?.position ?? 0;
+        const below = destCol[destIndex + 1]?.position ?? above + POSITION_GAP * 2;
+        newPosition = (above + below) / 2;
+      }
+      updatedTask.position = newPosition;
+
+      const newTasks = { ...prev };
+      newTasks[sourceStatus] = sourceCol;
+      if (sourceStatus !== destStatus) {
+        newTasks[destStatus] = destCol;
+      }
+      return newTasks;
+    });
+
+    // Persist to backend
     try {
       await service.updateTask(taskId, { status: destStatus, position: newPosition });
     } catch {
       fetchTasks();
+    } finally {
+      draggingRef.current = false;
     }
   }, [setTasks, service, fetchTasks]);
 
