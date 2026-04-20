@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import type { Task, TasksByStatus, CreateTaskPayload, UpdateTaskPayload } from '../types';
+import type { Task, TasksByStatus, ColumnTotals, CreateTaskPayload, UpdateTaskPayload } from '../types';
 import { useTaskBoardContext } from '../context/TaskBoardProvider';
 import { POSITION_GAP } from '../utils/constants';
 
@@ -8,6 +8,7 @@ export function useTaskActions(
   setTasks: React.Dispatch<React.SetStateAction<TasksByStatus>>,
   fetchTasks: () => Promise<void>,
   isDragging?: React.RefObject<boolean>,
+  setColumnTotals?: React.Dispatch<React.SetStateAction<ColumnTotals>>,
 ) {
   const { service, config } = useTaskBoardContext();
 
@@ -82,6 +83,15 @@ export function useTaskActions(
       return newTasks;
     });
 
+    // Keep column totals in sync so infinite-scroll sentinel stops firing
+    if (sourceStatus !== destStatus && setColumnTotals) {
+      setColumnTotals((prev) => ({
+        ...prev,
+        [sourceStatus]: Math.max(0, (prev[sourceStatus] || 0) - 1),
+        [destStatus]: (prev[destStatus] || 0) + 1,
+      }));
+    }
+
     // Persist to backend
     try {
       await service.updateTask(taskId, { status: destStatus, position: newPosition });
@@ -90,7 +100,7 @@ export function useTaskActions(
     } finally {
       draggingRef.current = false;
     }
-  }, [setTasks, service, fetchTasks]);
+  }, [setTasks, setColumnTotals, service, fetchTasks]);
 
   return { createTask, updateTask, deleteTask, markTaskRead, moveTask };
 }

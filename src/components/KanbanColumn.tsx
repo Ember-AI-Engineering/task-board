@@ -20,17 +20,19 @@ export interface KanbanColumnProps {
 
 function LoadMoreSentinel({ loading, onLoadMore, remaining }: { loading: boolean; onLoadMore: () => void; remaining: number }) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
 
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && !loading) onLoadMore(); },
+      ([entry]) => { if (entry.isIntersecting && !loading) onLoadMoreRef.current(); },
       { threshold: 0.1 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [loading, onLoadMore]);
+  }, [loading]);
 
   const skeletonCount = loading ? Math.min(remaining, 10) : 0;
 

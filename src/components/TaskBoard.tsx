@@ -41,7 +41,7 @@ export function TaskBoard({
 
   const isDraggingRef = useRef(false);
   const board = useTaskBoard(isDraggingRef);
-  const actions = useTaskActions(board.tasks, board.setTasks, board.fetchTasks, isDraggingRef);
+  const actions = useTaskActions(board.tasks, board.setTasks, board.fetchTasks, isDraggingRef, board.setColumnTotals);
   const { copiedTaskId, copyShareLink } = useShareLink();
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

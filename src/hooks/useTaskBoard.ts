@@ -126,6 +126,7 @@ export function useTaskBoard(isDragging?: React.RefObject<boolean>) {
     tasks,
     setTasks,
     columnTotals,
+    setColumnTotals,
     columnUnreads,
     setColumnUnreads,
     boardLoading,
